@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Multiplication Visualizer</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Set the default font for the page */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom classes for highlighting */
+        .highlight-row {
+            background-color: #bfdbfe; /* Tailwind's blue-200 */
+            border-color: #60a5fa;   /* Tailwind's blue-400 */
+        }
+        
+        .highlight-col {
+            background-color: #a7f3d0; /* Tailwind's emerald-200 */
+            border-color: #34d399;   /* Tailwind's emerald-400 */
+        }
+
+        .highlight-result {
+            background-color: #fef08a; /* Tailwind's yellow-200 */
+            border-color: #facc15;   /* Tailwind's yellow-400 */
+            font-weight: 700;
+        }
+
+        /* Basic transition for a smoother effect */
+        .matrix-cell {
+            transition: all 0.15s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main container card -->
+    <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-5xl">
+        
+        <header class="text-center mb-6">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Matrix Multiplication Visualizer</h1>
+            <p class="text-sm sm:text-base text-gray-500 mt-2">Hover over a cell in the Result (C) to see its calculation.</p>
+        </header>
+
+        <!-- Wrapper for horizontal scrolling on small screens -->
+        <div class="overflow-x-auto py-4">
+            <!-- Main flex container for matrices -->
+            <div class="flex items-center justify-center min-w-max">
+                
+                <!-- Matrix A Container -->
+                <div class="text-center">
+                    <h2 class="text-lg font-semibold" id="header-a">Matrix A (3x2)</h2>
+                    <div id="matrix-a" class="grid gap-2 p-2 mt-2">
+                        <!-- Matrix A cells will be injected here by JS -->
+                    </div>
+                </div>
+
+                <!-- Multiplication Symbol -->
+                <div class="text-4xl font-light text-gray-400 mx-4 sm:mx-6">×</div>
+
+                <!-- Matrix B Container -->
+                <div class="text-center">
+                    <h2 class="text-lg font-semibold" id="header-b">Matrix B (2x4)</h2>
+                    <div id="matrix-b" class="grid gap-2 p-2 mt-2">
+                        <!-- Matrix B cells will be injected here by JS -->
+                    </div>
+                </div>
+
+                <!-- Equals Symbol -->
+                <div class="text-4xl font-light text-gray-400 mx-4 sm:mx-6">=</div>
+
+                <!-- Matrix C (Result) Container -->
+                <div class="text-center">
+                    <h2 class="text-lg font-semibold" id="header-c">Result C (3x4)</h2>
+                    <div id="matrix-c" class="grid gap-2 p-2 mt-2">
+                        <!-- Matrix C cells will be injected here by JS -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. DEFINE INPUT MATRICES ---
+        // You can change these values to visualize different matrices!
+        // Note: The number of columns in A must equal the number of rows in B.
+        const matrixA = [
+            [1, 0, 2],
+            [3, 1, 1],
+            [0, 2, 4]
+        ];
+
+        const matrixB = [
+            [2, 1, 0, 3],
+            [1, 3, 2, 0],
+            [4, 0, 1, 2]
+        ];
+
+        // --- 2. MATRIX MULTIPLICATION LOGIC ---
+        function multiplyMatrices(a, b) {
+            const rowsA = a.length;
+            const colsA = a[0].length;
+            const rowsB = b.length;
+            const colsB = b[0].length;
+
+            // Check if multiplication is possible
+            if (colsA !== rowsB) {
+                console.error("Matrix multiplication not possible: colsA !== rowsB");
+                return null;
+            }
+
+            // Initialize result matrix C with zeros
+            let c = Array(rowsA).fill(0).map(() => Array(colsB).fill(0));
+
+            // Perform multiplication
+            for (let i = 0; i < rowsA; i++) { // Iterate over rows of A
+                for (let j = 0; j < colsB; j++) { // Iterate over columns of B
+                    for (let k = 0; k < colsA; k++) { // Iterate over columns of A / rows of B
+                        c[i][j] += a[i][k] * b[k][j];
+                    }
+                }
+            }
+            return c;
+        }
+
+        // --- 3. DOM RENDERING ---
+        
+        /**
+         * Renders a matrix into a specified container.
+         * @param {number[][]} matrix - The matrix data to render.
+         * @param {string} containerId - The ID of the container element.
+         * @param {string} cellType - 'a', 'b', or 'c' for data-attribute setup.
+         */
+        function renderMatrix(matrix, containerId, cellType) {
+            const container = document.getElementById(containerId);
+            if (!container || !matrix) return;
+
+            container.innerHTML = ''; // Clear previous content
+            const rows = matrix.length;
+            const cols = matrix[0].length;
+
+            // Use CSS Grid to create the matrix layout
+            container.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    const cell = document.createElement('div');
+                    // Base styling for all cells
+                    cell.className = 'matrix-cell w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center border border-gray-300 rounded-md font-medium text-gray-700';
+                    cell.innerText = matrix[i][j];
+                    
+                    // Add data attributes to identify row and column
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.dataset.type = cellType;
+
+                    container.appendChild(cell);
+                }
+            }
+        }
+
+        /**
+         * Adds hover event listeners to the result matrix (C).
+         */
+        function addHoverListeners() {
+            const resultCells = document.querySelectorAll('#matrix-c .matrix-cell');
+            
+            resultCells.forEach(cell => {
+                cell.addEventListener('mouseover', () => highlight(cell.dataset.row, cell.dataset.col));
+                cell.addEventListener('mouseout', () => clearHighlights());
+            });
+        }
+
+        // --- 4. HIGHLIGHTING LOGIC ---
+
+        /**
+         * Highlights the corresponding row in A, col in B, and the cell in C.
+         * @param {string} rowI - The row index (from data-attribute).
+         * @param {string} colJ - The column index (from data-attribute).
+         */
+        function highlight(rowI, colJ) {
+            // Highlight row in Matrix A
+            document.querySelectorAll(`#matrix-a [data-row="${rowI}"]`).forEach(cell => {
+                cell.classList.add('highlight-row');
+            });
+
+            // Highlight column in Matrix B
+            document.querySelectorAll(`#matrix-b [data-col="${colJ}"]`).forEach(cell => {
+                cell.classList.add('highlight-col');
+            });
+
+            // Highlight the result cell itself
+            document.querySelector(`#matrix-c [data-row="${rowI}"][data-col="${colJ}"]`).classList.add('highlight-result');
+        }
+
+        /**
+         * Clears all active highlights from all matrices.
+         */
+        function clearHighlights() {
+            document.querySelectorAll('.highlight-row').forEach(cell => cell.classList.remove('highlight-row'));
+            document.querySelectorAll('.highlight-col').forEach(cell => cell.classList.remove('highlight-col'));
+            document.querySelectorAll('.highlight-result').forEach(cell => cell.classList.remove('highlight-result'));
+        }
+        
+        /**
+         * Updates the header text with matrix dimensions.
+         */
+        function updateHeaders(a, b, c) {
+            document.getElementById('header-a').innerText = `Matrix A (${a.length}x${a[0].length})`;
+            document.getElementById('header-b').innerText = `Matrix B (${b.length}x${b[0].length})`;
+            document.getElementById('header-c').innerText = `Result C (${c.length}x${c[0].length})`;
+        }
+
+        // --- 5. INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const matrixC = multiplyMatrices(matrixA, matrixB);
+
+            if (matrixC) {
+                // Render all three matrices
+                renderMatrix(matrixA, 'matrix-a', 'a');
+                renderMatrix(matrixB, 'matrix-b', 'b');
+                renderMatrix(matrixC, 'matrix-c', 'c');
+                
+                // Set up the interactive highlighting
+                addHoverListeners();
+                
+                // Update the headers to match the matrix sizes
+                updateHeaders(matrixA, matrixB, matrixC);
+            } else {
+                // Handle the case where multiplication isn't possible
+                document.querySelector('.container').innerHTML = 
+                    '<h1 class="text-2xl font-bold text-red-600">Error</h1>' +
+                    '<p class="text-gray-700 mt-2">Matrix multiplication is not possible. The number of columns in Matrix A must equal the number of rows in Matrix B.</p>';
+            }
+        });
+
+    </script>
+</body>
+</html>
